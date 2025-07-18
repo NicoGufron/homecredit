@@ -1,19 +1,30 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:homecredit/controller/list_notifier.dart';
+import 'package:homecredit/models/contract.dart';
+import 'package:homecredit/models/insurance.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:implicitly_animated_reorderable_list_2/implicitly_animated_reorderable_list_2.dart';
+import 'package:implicitly_animated_reorderable_list_2/transitions.dart';
+import 'package:intl/intl.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatefulHookConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  _HomeScreenState createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
 
-  bool sortChange = false;
+  final formatter = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp.', decimalDigits: 0);
 
   @override
   Widget build(BuildContext context) {
+
+    final items = ref.watch(listProvider);
+    final notifier = ref.read(listProvider.notifier);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -21,83 +32,128 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text("My Contract List"),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
-        child: Column(
-          children: [
-            ElevatedButton(
-              onPressed: () {
-                if (mounted) {
-                  setState(() {
-                    sortChange = !sortChange;
-                  });
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white,
+      body: AnimatedSwitcher(
+        duration: Duration(milliseconds: 300),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 12),
+          child: Column(
+            children: [
+              ElevatedButton(
+                onPressed: () async {
+                  notifier.toggleSort();
+                  // notifier.load();
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.compare_arrows),
+                    SizedBox(width: 5),
+                    Text("Sort by Due Date ${notifier.asc ?  "(Earliest First)" : "(Latest First)" }")
+                  ],
+                )
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.compare_arrows),
-                  SizedBox(width: 5),
-                  Text("Sort by Due Date ${sortChange ?  "(Earliest First)" : "(Latest First)" }")
-                ],
-              )
-            ),
-            SizedBox(height: 10),
-            Expanded(
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemBuilder: (context, index) {
-                  return Card(
-                    color: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.all(Radius.circular(16)),
-                      side: BorderSide(color: Colors.black26)
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Column(
-                        children: [
-                          CardHeader(),
-                          SizedBox(height: 25,),
-                          ItemDescription(
-                            leftText: "Due Amount",
-                            leftIcon: FaIcon(FontAwesomeIcons.solidMoneyBill1, size: 18, color: Colors.black45,),
-                            leftBottomText: "Rp. 350.000",
-                            rightText: "Installment",
-                            rightBottomText: "Rp. 350.000",
-                            rightIcon: FaIcon(FontAwesomeIcons.creditCard, size: 18, color: Colors.black45,),
+              SizedBox(height: 10),
+              Expanded(
+                child: notifier.isLoading ? Center(
+                  child: CircularProgressIndicator(),
+                ) : notifier.error != null ? Center(
+                  child: Column(
+                    children: [
+                      Icon(Icons.error, size: 48, color: Colors.red,),
+                      SizedBox(height: 16),
+                      Text('Error: ${notifier.error}'),
+                      SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () => notifier.load(), 
+                        child: Text("Retry")
+                      )
+                    ],
+                  ),
+                ) : ImplicitlyAnimatedList(
+                  items: items, 
+                  // id harus sama dengan satu sama lain
+                  areItemsTheSame: (a, b) => a.displayId == b.displayId,
+                  itemBuilder: (context, animation, item, index) {
+                    return SizeFadeTransition(
+                      animation: animation,
+                      curve: Curves.easeIn,
+                      child: Card(
+                        color: Colors.white,
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(16)),
+                          side: BorderSide(color: Colors.black26)
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            children: [
+                              CardHeader(
+                                id: item is Contract ? item.contractNumber : (item as Insurance).orderId,
+                                type: item is Contract ? "Contract" : "Insurance",
+                                status: item is Contract ? item.status : (item as Insurance).status,
+                                icon: item is Contract ? FaIcon(FontAwesomeIcons.fileInvoice, color: Colors.green) : FaIcon(FontAwesomeIcons.shield, color: Colors.blue)
+                              ),
+                              SizedBox(height: 25,),
+                              if (item is Contract) ...[
+                                ItemDescription(
+                                  leftText: "Due Amount",
+                                  leftIcon: FaIcon(FontAwesomeIcons.solidMoneyBill1, size: 18, color: Colors.black45,),
+                                  leftBottomText: item.dueAmount != null ? formatter.format(int.parse(item.dueAmount!['amount'])) : "N/A",
+                                  rightText: "Installment",
+                                  rightBottomText: item.contractInfo != null ? formatter.format(int.parse(item.contractInfo!['installmentAmount']?['amount'])) ?? 'N/A' : "N/A",
+                                  rightIcon: FaIcon(FontAwesomeIcons.creditCard, size: 18, color: Colors.black45,),
+                                ),
+                                SizedBox(height: 10,),
+                                ItemDescription(
+                                  leftText: "Credit Amount",
+                                  leftBottomText: item.contractInfo != null ? formatter.format(int.parse(item.contractInfo!['creditAmount']?['amount'])) ?? "N/A" : "N/A",
+                                  leftIcon: FaIcon(FontAwesomeIcons.moneyBill, size: 18, color: Colors.black45),
+                                  rightText: "Tenor",
+                                  rightBottomText: item.contractInfo != null ? "${item.contractInfo!['tenor'] ?? 'N/A'} months" : "N/A",
+                                  rightIcon: FaIcon(FontAwesomeIcons.clock, size: 18, color: Colors.black45),
+                                ),
+                              ] else if (item is Insurance) ... [
+                                ItemDescription(
+                                  leftText: "Amount",
+                                  leftIcon: FaIcon(FontAwesomeIcons.solidMoneyBill1, size: 18, color: Colors.black45),
+                                  leftBottomText: formatter.format(int.parse(item.amount)),
+                                  rightText: "Product",
+                                  rightBottomText: item.productCode,
+                                  rightIcon: FaIcon(FontAwesomeIcons.boxOpen, size: 18, color: Colors.black45,)
+                                ),
+                                ItemDescription(
+                                  leftText: "Policy Number",
+                                  leftBottomText: item.policyNumber,
+                                  leftIcon: FaIcon(FontAwesomeIcons.fileLines, size: 18, color: Colors.black45),
+                                  rightText: "Status",
+                                  rightBottomText: item.status,
+                                  rightIcon: FaIcon(FontAwesomeIcons.circleCheck, size: 18, color: Colors.black45),
+                                ),
+                              ],
+                              Divider(),
+                              ItemDescription(
+                                leftText: "Created Date",
+                                leftBottomText: item is Contract ? item.createdDate : (item as Insurance).createdDate,
+                                leftIcon: Icon(Icons.calendar_today, size: 18, color: Colors.black45),
+                                rightText: "Due Date",
+                                rightBottomText: item is Contract && item.dueDate != null ? item.dueDate! : (item as Insurance).createdDate,
+                                rightIcon: Icon(Icons.calendar_today, size: 18, color: Colors.black45),
+                              )
+                            ]
                           ),
-                          SizedBox(height: 10,),
-                          ItemDescription(
-                            leftText: "Credit Amount",
-                            leftBottomText: "Rp. 350.000",
-                            leftIcon: FaIcon(FontAwesomeIcons.moneyBill, size: 18, color: Colors.black45),
-                            rightText: "Tenor",
-                            rightBottomText: "18 months",
-                            rightIcon: FaIcon(FontAwesomeIcons.clock, size: 18, color: Colors.black45),
-                          ),
-                          Divider(),
-                          ItemDescription(
-                            leftText: "Created Date",
-                            leftBottomText: "20 June 2025",
-                            leftIcon: Icon(Icons.calendar_today, size: 18, color: Colors.black45),
-                            rightText: "Due Date",
-                            rightBottomText: "20 Dec 2025",
-                            rightIcon: Icon(Icons.calendar_today, size: 18, color: Colors.black45),
-                          )
-                        ],
+                        ),
                       ),
-                    ),
-                  );
-                }
+                    );
+                  }, 
+                )
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -106,17 +162,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class CardHeader extends StatelessWidget {
 
-  String id;
-  String type;
-  String status;
-  Widget? icon;
+  final String id;
+  final String type;
+  final String status;
+  final Widget? icon;
 
   CardHeader({
     super.key,
-    this.id = "",
-    this.type = "",
-    this.status = "",
-    icon
+    required this.id,
+    required this.type,
+    required this.status,
+    this.icon
   });
 
   @override
@@ -131,8 +187,8 @@ class CardHeader extends StatelessWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("1111222233", style: TextStyle(fontWeight: FontWeight.bold)),
-                Text(type == "" ? "Contract" : "Insurance", style: TextStyle(color: Colors.black45, fontSize: 12), )
+                Text(id, style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(type, style: TextStyle(color: Colors.black45, fontSize: 12), )
               ]
             )
           ],
@@ -141,11 +197,25 @@ class CardHeader extends StatelessWidget {
           padding: EdgeInsets.all(8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.all(Radius.circular(20)),
-            color: Colors.green
+            color: getStatusColor(status)
           ),
-          child: Text("Active", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),))
+          child: Text(status, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),))
       ],
     );
+  }
+
+  // Buat status color
+  Color getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'active' :
+        return Colors.green;
+      case 'finished':
+        return Colors.blue;
+      case 'rejected':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
   }
 }
 
@@ -176,7 +246,10 @@ class ItemDescription extends StatelessWidget {
           flex: 1,
           child: Row(
             children: [
-              leftIcon ?? Icon(Icons.money,),
+              SizedBox(
+                height: 24,
+                width: 24,
+                child: Center(child: leftIcon ?? Icon(Icons.money,))),
               SizedBox(width: 10,),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,7 +265,11 @@ class ItemDescription extends StatelessWidget {
           flex: 1,
           child: Row(
             children: [
-              rightIcon ?? Icon(Icons.abc),
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: Center(
+                  child: rightIcon ?? Icon(Icons.abc))),
               SizedBox(width: 10,),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
