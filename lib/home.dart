@@ -3,10 +3,12 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:homecredit/controller/list_notifier.dart';
 import 'package:homecredit/models/contract.dart';
 import 'package:homecredit/models/insurance.dart';
+import 'package:homecredit/utils/context_extension.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:implicitly_animated_reorderable_list_2/implicitly_animated_reorderable_list_2.dart';
 import 'package:implicitly_animated_reorderable_list_2/transitions.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class HomeScreen extends StatefulHookConsumerWidget {
   const HomeScreen({super.key});
@@ -29,7 +31,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         forceMaterialTransparency: true,
-        title: Text("My Contract List"),
+        title: Text(context.l10n.myContractList),
         centerTitle: true,
       ),
       body: AnimatedSwitcher(
@@ -52,7 +54,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   children: [
                     Icon(Icons.compare_arrows),
                     SizedBox(width: 5),
-                    Text("Sort by Due Date ${notifier.asc ?  "(Earliest First)" : "(Latest First)" }")
+                    Flexible(
+                      child: Text("${context.l10n.sortByDueDate} ${notifier.asc ?  context.l10n.earliestFirst : context.l10n.latestFirst }", textAlign: TextAlign.center,))
                   ],
                 )
               ),
@@ -94,53 +97,53 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             children: [
                               CardHeader(
                                 id: item is Contract ? item.contractNumber : (item as Insurance).orderId,
-                                type: item is Contract ? "Contract" : "Insurance",
+                                type: item is Contract ? context.l10n.contract : context.l10n.insurance,
                                 status: item is Contract ? item.status : (item as Insurance).status,
                                 icon: item is Contract ? FaIcon(FontAwesomeIcons.fileInvoice, color: Colors.green) : FaIcon(FontAwesomeIcons.shield, color: Colors.blue)
                               ),
                               SizedBox(height: 25,),
                               if (item is Contract) ...[
                                 ItemDescription(
-                                  leftText: "Due Amount",
+                                  leftText: context.l10n.dueAmount,
                                   leftIcon: FaIcon(FontAwesomeIcons.solidMoneyBill1, size: 18, color: Colors.black45,),
                                   leftBottomText: item.dueAmount != null ? formatter.format(int.parse(item.dueAmount!['amount'])) : "N/A",
-                                  rightText: "Installment",
+                                  rightText: context.l10n.installment,
                                   rightBottomText: item.contractInfo != null ? formatter.format(int.parse(item.contractInfo!['installmentAmount']?['amount'])) ?? 'N/A' : "N/A",
                                   rightIcon: FaIcon(FontAwesomeIcons.creditCard, size: 18, color: Colors.black45,),
                                 ),
                                 SizedBox(height: 10,),
                                 ItemDescription(
-                                  leftText: "Credit Amount",
+                                  leftText: context.l10n.creditAmount,
                                   leftBottomText: item.contractInfo != null ? formatter.format(int.parse(item.contractInfo!['creditAmount']?['amount'])) ?? "N/A" : "N/A",
                                   leftIcon: FaIcon(FontAwesomeIcons.moneyBill, size: 18, color: Colors.black45),
-                                  rightText: "Tenor",
+                                  rightText: context.l10n.tenor,
                                   rightBottomText: item.contractInfo != null ? "${item.contractInfo!['tenor'] ?? 'N/A'} months" : "N/A",
                                   rightIcon: FaIcon(FontAwesomeIcons.clock, size: 18, color: Colors.black45),
                                 ),
                               ] else if (item is Insurance) ... [
                                 ItemDescription(
-                                  leftText: "Amount",
+                                  leftText: context.l10n.amount,
                                   leftIcon: FaIcon(FontAwesomeIcons.solidMoneyBill1, size: 18, color: Colors.black45),
                                   leftBottomText: formatter.format(int.parse(item.amount)),
-                                  rightText: "Product",
+                                  rightText: context.l10n.product,
                                   rightBottomText: item.productCode,
                                   rightIcon: FaIcon(FontAwesomeIcons.boxOpen, size: 18, color: Colors.black45,)
                                 ),
                                 ItemDescription(
-                                  leftText: "Policy Number",
+                                  leftText: context.l10n.policyNumber,
                                   leftBottomText: item.policyNumber,
                                   leftIcon: FaIcon(FontAwesomeIcons.fileLines, size: 18, color: Colors.black45),
-                                  rightText: "Status",
+                                  rightText: context.l10n.status,
                                   rightBottomText: item.status,
                                   rightIcon: FaIcon(FontAwesomeIcons.circleCheck, size: 18, color: Colors.black45),
                                 ),
                               ],
                               Divider(),
                               ItemDescription(
-                                leftText: "Created Date",
+                                leftText: context.l10n.createdDate,
                                 leftBottomText: item is Contract ? item.createdDate : (item as Insurance).createdDate,
                                 leftIcon: Icon(Icons.calendar_today, size: 18, color: Colors.black45),
-                                rightText: "Due Date",
+                                rightText: context.l10n.dueDate,
                                 rightBottomText: item is Contract && item.dueDate != null ? item.dueDate! : (item as Insurance).createdDate,
                                 rightIcon: Icon(Icons.calendar_today, size: 18, color: Colors.black45),
                               )
@@ -199,7 +202,7 @@ class CardHeader extends StatelessWidget {
             borderRadius: BorderRadius.all(Radius.circular(20)),
             color: getStatusColor(status)
           ),
-          child: Text(status, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),))
+          child: Text(status == "Active" ? context.l10n.active : status == "Finished" ? context.l10n.finish : status == "Rejected" ? context.l10n.rejected : "", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),))
       ],
     );
   }

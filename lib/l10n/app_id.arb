@@ -1,0 +1,22 @@
+{
+    "contract" : "Kontrak",
+    "insurance" : "Asuransi",
+    "rejected": "Ditolak",
+    "active" : "Aktif",
+    "finish" : "Selesai",
+    "policyNumber" : "Nomor Polis",
+    "amount" : "Jumlah",
+    "dueAmount" : "Jumlah Jatuh Tempo",
+    "creditAmount" : "Jumlah Kredit",
+    "installment" : "Cicilan",
+    "tenor" : "Tenor",
+    "product" : "Produk",
+    "status": "Status",
+    "createdDate" : "Tanggal Dibuat",
+    "dueDate": "Tanggal Jatuh Tempo",
+    "myContractList" : "Daftar Kontrak Saya",
+    "sortByDueDate" : "Urut berdasarkan Tanggal",
+    "latestFirst" : "Terbaru Pertama",
+    "earliestFirst" : "Terlama Pertama",
+    "retry" : "Coba Lagi"
+}

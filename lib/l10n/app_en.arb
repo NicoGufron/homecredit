@@ -1,0 +1,22 @@
+{
+    "contract" : "Contract",
+    "insurance" : "Insurance",
+    "rejected": "Rejected",
+    "active" : "Active",
+    "finish" : "Finished",
+    "policyNumber" : "Policy Number",
+    "amount" : "Amount",
+    "dueAmount" : "Due Amount",
+    "creditAmount" : "Credit Amount",
+    "installment" : "Installment",
+    "tenor" : "Tenor",
+    "product" : "Product",
+    "status": "Status",
+    "createdDate" : "Created Date",
+    "dueDate": "Due Date",
+    "myContractList" : "My Contract List",
+    "sortByDueDate" : "Sort by Due Date",
+    "latestFirst" : "Latest First",
+    "earliestFirst" : "Earliest First",
+    "retry" : "Retry"
+}
