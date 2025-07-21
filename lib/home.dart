@@ -8,7 +8,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:implicitly_animated_reorderable_list_2/implicitly_animated_reorderable_list_2.dart';
 import 'package:implicitly_animated_reorderable_list_2/transitions.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_gen/gen_l10n/app_localization.dart';
 
 class HomeScreen extends StatefulHookConsumerWidget {
   const HomeScreen({super.key});
@@ -72,7 +72,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       SizedBox(height: 16),
                       ElevatedButton(
                         onPressed: () => notifier.load(), 
-                        child: Text("Retry")
+                        child: Text(context.l10n.retry)
                       )
                     ],
                   ),
